@@ -34,7 +34,7 @@ def detect_anomalies_statistical(data: pd.Series, threshold: float = 3.0) -> np.
     return (z_scores > threshold).astype(int)
 
 def plot_anomalies(data: pd.Series, anomalies: np.ndarray, title: str, output_path: Path):
- """Plot time series with detected anomalies """
+    """Plot time series with detected anomalies """
     fig, ax = plt.subplots(figsize=(10, 6))
     
     ax.plot(data.index if hasattr(data.index, '__len__') else range(len(data)),

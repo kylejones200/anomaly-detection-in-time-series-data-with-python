@@ -11,7 +11,7 @@ import logging
 import numpy as np
 import pandas as pd
 from pathlib import Path
-from src.core import ((level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+from src.core import (
     create_lagged_features,
     detect_anomalies_isolation_forest,
     detect_anomalies_statistical,
