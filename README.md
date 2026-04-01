@@ -1,13 +1,49 @@
 # Anomaly Detection in Time Series Data with Python
 
-**Published:** 2024-12-18
-**Medium:** [https://medium.com/@kyle-t-jones/anomaly-detection-in-time-series-data-with-python-5a15089636db](https://medium.com/@kyle-t-jones/anomaly-detection-in-time-series-data-with-python-5a15089636db)
+This project demonstrates anomaly detection techniques for time series data.
 
-## About
+## Article
 
-Place the code for this article in this repository.
-The original article export is saved as `article.md`.
+Medium article: [Anomaly Detection in Time Series Data with Python](https://medium.com/gitconnected/anomaly-detection-in-time-series-data-with-python-5a15089636db)
 
-## Files
+## Project Structure
 
-Add your `.ipynb`, `.py`, `.yaml`, `.js`, `.ts`, or other project files here.
+```
+.
+├── README.md           # This file
+├── main.py            # Main entry point
+├── config.yaml        # Configuration file
+├── requirements.txt   # Python dependencies
+├── src/               # Core functions
+│   ├── core.py        # Anomaly detection functions
+│   └── plotting.py    # Tufte-style plotting utilities
+├── tests/             # Unit tests
+├── data/              # Data files
+└── images/            # Generated plots and figures
+```
+
+## Configuration
+
+Edit `config.yaml` to customize:
+- Data source or synthetic generation
+- Detection method (isolation_forest, statistical)
+- Model parameters (contamination, threshold)
+- Output settings
+
+## Anomaly Detection Methods
+
+### Isolation Forest
+- Unsupervised learning approach
+- Handles multivariate data
+- Effective for high-dimensional spaces
+
+### Statistical Method (Z-score)
+- Simple and interpretable
+- Based on standard deviations
+- Fast computation
+
+## Caveats
+
+- By default, generates synthetic time series with injected anomalies.
+- Isolation Forest requires feature engineering (lagged features).
+- Statistical method assumes normal distribution.
