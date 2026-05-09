@@ -53,10 +53,10 @@ def main():
         raise ValueError("No data source specified")
     
     if config['model']['method'] == 'isolation_forest':
-                features_df = create_lagged_features(data, config['model']['lag'])
+        features_df = create_lagged_features(data, config['model']['lag'])
         X = features_df.values
         
-                anomalies = detect_anomalies_isolation_forest(
+        anomalies = detect_anomalies_isolation_forest(
             X, config['model']['contamination'], config['data']['seed']
         )
         anomalies_full = np.zeros(len(data))
