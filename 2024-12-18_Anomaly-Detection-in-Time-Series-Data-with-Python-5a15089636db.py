@@ -95,27 +95,28 @@ def detect_anomalies(reconstruction_error, threshold=3):
     std = np.std(reconstruction_error)
     return reconstruction_error > mean + threshold * std
 
-def plot_results(data, reconstruction_error, threshold=3, window_size=20):
-    plt.figure(figsize=(12, 6))
+def plot_results(data, reconstruction_error, threshold=3, window_size=20, plot: bool = False):
+    if plot:
+        plt.figure(figsize=(12, 6))
     
     # Plot the original data
-    plt.plot(data[window_size:], label="Time Series")
+        plt.plot(data[window_size:], label="Time Series")
     
     # Detect anomalies
-    mean = np.mean(reconstruction_error)
-    std = np.std(reconstruction_error)
-    anomalies = reconstruction_error > mean + threshold * std
+        mean = np.mean(reconstruction_error)
+        std = np.std(reconstruction_error)
+        anomalies = reconstruction_error > mean + threshold * std
     
     # Plot anomalies
-    anomaly_indices = np.where(anomalies)[0] + window_size
-    plt.scatter(anomaly_indices, data[anomaly_indices], color='red', label="Anomalies")
+        anomaly_indices = np.where(anomalies)[0] + window_size
+        plt.scatter(anomaly_indices, data[anomaly_indices], color='red', label="Anomalies")
     
-    plt.title("Anomaly Detection with LSTM Autoencoder")
-    plt.xlabel("Time")
-    plt.ylabel("Value")
-    plt.legend()
-    plt.savefig('lstm_anomaly_detection.jpg')
-    plt.show()
+        plt.title("Anomaly Detection with LSTM Autoencoder")
+        plt.xlabel("Time")
+        plt.ylabel("Value")
+        plt.legend()
+        plt.savefig('lstm_anomaly_detection.jpg')
+        plt.show()
     
     return anomalies
 
@@ -231,7 +232,7 @@ def train_autoencoder(X: np.ndarray, cfg: Config) -> Tuple[AE, np.ndarray]:
     return model, errs
 
 
-def main():
+def main(plot: bool = False):
     cfg = Config()
     s = load_series(cfg)
 
@@ -270,21 +271,22 @@ def main():
     anomalies = z > cfg.z_thresh
 
     # Plot on original series
-    plt.figure(figsize=(10,5))
-    plt.plot(s.index, s.values, label='EIA series', alpha=0.7)
-    if anomalies.any():
-        ts_anom = err_s.index[anomalies]
-        vals = s.reindex(ts_anom).values
-        plt.scatter(ts_anom, vals, color='red', s=24, label='AE anomaly')
-    plt.legend()
-    save_fig('eia_anomaly_autoencoder.png')
+    if plot:
+        plt.figure(figsize=(10,5))
+        plt.plot(s.index, s.values, label='EIA series', alpha=0.7)
+        if anomalies.any():
+            ts_anom = err_s.index[anomalies]
+            vals = s.reindex(ts_anom).values
+            plt.scatter(ts_anom, vals, color='red', s=24, label='AE anomaly')
+        plt.legend()
+        save_fig('eia_anomaly_autoencoder.png')
 
     # Also show error time series
-    plt.figure(figsize=(10,3))
-    plt.plot(err_s.index, err_s.values, label='Recon error')
-    plt.axhline(e_mu + cfg.z_thresh*e_sd, color='red', lw=0.8, linestyle='--', label='threshold')
-    plt.legend()
-    save_fig('eia_anomaly_autoencoder_error.png')
+        plt.figure(figsize=(10,3))
+        plt.plot(err_s.index, err_s.values, label='Recon error')
+        plt.axhline(e_mu + cfg.z_thresh*e_sd, color='red', lw=0.8, linestyle='--', label='threshold')
+        plt.legend()
+        save_fig('eia_anomaly_autoencoder_error.png')
 
 if __name__ == '__main__':
     main()

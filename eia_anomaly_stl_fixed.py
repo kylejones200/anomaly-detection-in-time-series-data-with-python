@@ -28,7 +28,7 @@ def load_series(cfg: Config) -> pd.Series:
     return s
 
 
-def main():
+def main(plot: bool = False):
     cfg = Config()
     s = load_series(cfg)
     stl = STL(s, period=cfg.season, robust=True).fit()
@@ -36,11 +36,12 @@ def main():
     z = (resid - resid.mean()) / (resid.std(ddof=1) if resid.std(ddof=1) else 1.0)
     anomalies = z.abs() > cfg.z_thresh
 
-    plt.figure(figsize=(9,5))
-    plt.plot(s.index, s.values, label="series", alpha=0.7)
-    plt.scatter(s.index[anomalies], s.values[anomalies], color='red', s=24, label="anomaly")
-    plt.legend()
-    save_fig("eia_anomaly_stl.png")
+    if plot:
+        plt.figure(figsize=(9,5))
+        plt.plot(s.index, s.values, label="series", alpha=0.7)
+        plt.scatter(s.index[anomalies], s.values[anomalies], color='red', s=24, label="anomaly")
+        plt.legend()
+        save_fig("eia_anomaly_stl.png")
 
 if __name__ == "__main__":
     main()
