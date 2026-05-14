@@ -1,3 +1,4 @@
+import signalplot
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -6,10 +7,8 @@ from dataclasses import dataclass
 from statsmodels.tsa.seasonal import STL
 
 np.random.seed(42)
-plt.rcParams.update({'font.family': 'serif','axes.spines.top': False,'axes.spines.right': False,'axes.linewidth': 0.8})
+signalplot.apply(font_family='serif')
 
-def save_fig(path: str):
-    plt.tight_layout(); plt.savefig(path, bbox_inches='tight'); plt.close()
 
 @dataclass
 class Config:
@@ -41,7 +40,7 @@ def main(plot: bool = False):
         plt.plot(s.index, s.values, label="series", alpha=0.7)
         plt.scatter(s.index[anomalies], s.values[anomalies], color='red', s=24, label="anomaly")
         plt.legend()
-        save_fig("eia_anomaly_stl.png")
+        signalplot.save("eia_anomaly_stl.png")
 
 if __name__ == "__main__":
     main()
