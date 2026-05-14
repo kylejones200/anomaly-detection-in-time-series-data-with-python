@@ -9,7 +9,6 @@ import numpy as np
 import polars as pl
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).parent))
 from core import create_lagged_features, detect_anomalies_statistical, plot_anomalies
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
