@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Anomaly detection — Polars + DuckDB rewrite (statistical method)."""
 
-import sys
 import argparse
 import yaml
 import logging

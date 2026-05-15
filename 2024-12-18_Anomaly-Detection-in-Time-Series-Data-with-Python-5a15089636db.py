@@ -12,7 +12,6 @@ from sklearn.ensemble import IsolationForest
 from sklearn.preprocessing import MinMaxScaler
 from statsmodels.tsa.seasonal import STL
 from torch.utils.data import DataLoader, TensorDataset
-from typing import Tuple
 import signalplot
 import logging
 import matplotlib.pyplot as plt
@@ -200,7 +199,7 @@ def make_windows(x: np.ndarray, win: int) -> np.ndarray:
     return np.stack([x[i:i+win] for i in range(len(x)-win+1)], axis=0)
 
 
-def train_autoencoder(X: np.ndarray, cfg: Config) -> Tuple[AE, np.ndarray]:
+def train_autoencoder(X: np.ndarray, cfg: Config) -> tuple[AE, np.ndarray]:
     device = torch.device('cpu')
     model = AE(X.shape[1]).to(device)
     opt = torch.optim.Adam(model.parameters(), lr=cfg.lr)

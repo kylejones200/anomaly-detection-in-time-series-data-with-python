@@ -10,14 +10,13 @@ DuckDB showcase here.
 
 import duckdb
 import polars as pl
-import numpy as np
 import matplotlib.pyplot as plt
 from pathlib import Path
 
 
 def create_lagged_features(series: pl.Series, lag: int = 5) -> pl.DataFrame:
     """pandas .shift() loop → DuckDB LAG() window functions."""
-    df = pl.DataFrame({"idx": range(len(series)), "value": series})
+    pl.DataFrame({"idx": range(len(series)), "value": series})
     lag_exprs = ",\n            ".join(
         f"LAG(value, {i}) OVER (ORDER BY idx) AS lag_{i}"
         for i in range(1, lag + 1)
@@ -39,7 +38,7 @@ def detect_anomalies_statistical(
     Original: (series - series.mean()) / series.std()  (two pandas passes)
     New:      single DuckDB query computes mean, std, z-score, and flag together.
     """
-    df = pl.DataFrame({"idx": range(len(series)), "value": series})
+    pl.DataFrame({"idx": range(len(series)), "value": series})
     return duckdb.sql(f"""
         SELECT
             idx,
