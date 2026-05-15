@@ -30,7 +30,6 @@ logging.basicConfig(
 
 
 # Simulated Time Series with Anomalies
-np.random.seed(42)
 normal_data = np.sin(np.linspace(0, 50, 500))  # Sine wave as normal data
 anomaly_data = normal_data.copy()
 anomaly_data[450:460] += 3  # Inject anomalies
@@ -148,7 +147,6 @@ if __name__ == "__main__":
     logger.info(f"Number of anomalies detected: {np.sum(anomalies)}")
 
 
-np.random.seed(42)
 torch.manual_seed(42)
 signalplot.apply(font_family='serif')
 
@@ -231,6 +229,7 @@ def train_autoencoder(X: np.ndarray, cfg: Config) -> Tuple[AE, np.ndarray]:
 
 
 def main(plot: bool = False):
+    np.random.seed(42)
     cfg = Config()
     s = load_series(cfg)
 
