@@ -1,13 +1,14 @@
-import signalplot
+from dataclasses import dataclass
+from pathlib import Path
+
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
-from pathlib import Path
-from dataclasses import dataclass
+import signalplot
 from statsmodels.tsa.seasonal import STL
 
 np.random.seed(42)
-signalplot.apply(font_family='serif')
+signalplot.apply(font_family="serif")
 
 
 @dataclass
@@ -20,7 +21,7 @@ class Config:
 
 def load_series(cfg: Config) -> pd.Series:
     p = Path(cfg.csv_path)
-    df = pd.read_csv(p, header=None, usecols=[0,1], names=["date","value"], sep=",")
+    df = pd.read_csv(p, header=None, usecols=[0, 1], names=["date", "value"], sep=",")
     df["date"] = pd.to_datetime(df["date"], format="%Y-%m-%d", errors="coerce")
     df["value"] = pd.to_numeric(df["value"], errors="coerce")
     s = df.dropna().sort_values("date").set_index("date")["value"].asfreq(cfg.freq)
@@ -36,11 +37,14 @@ def main(plot: bool = False):
     anomalies = z.abs() > cfg.z_thresh
 
     if plot:
-        plt.figure(figsize=(9,5))
+        plt.figure(figsize=(9, 5))
         plt.plot(s.index, s.values, label="series", alpha=0.7)
-        plt.scatter(s.index[anomalies], s.values[anomalies], color='red', s=24, label="anomaly")
+        plt.scatter(
+            s.index[anomalies], s.values[anomalies], color="red", s=24, label="anomaly"
+        )
         plt.legend()
         signalplot.save("eia_anomaly_stl.png")
+
 
 if __name__ == "__main__":
     main()

@@ -1,31 +1,30 @@
 # Description: Short example for Anomaly Detection in Time Series Data with Python.
 
 
-
-from data_io import read_csv
+import logging
 from dataclasses import dataclass
-from keras.callbacks import EarlyStopping
-from keras.layers import Dense, LSTM, RepeatVector, TimeDistributed
-from keras.models import Sequential
 from pathlib import Path
+
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+import signalplot
+import torch
+import torch.nn as nn
+from data_io import read_csv
+from keras.callbacks import EarlyStopping
+from keras.layers import LSTM, Dense, RepeatVector, TimeDistributed
+from keras.models import Sequential
 from sklearn.ensemble import IsolationForest
 from sklearn.preprocessing import MinMaxScaler
 from statsmodels.tsa.seasonal import STL
 from torch.utils.data import DataLoader, TensorDataset
-import signalplot
-import logging
-import matplotlib.pyplot as plt
-import numpy as np
-import pandas as pd
-import torch
-import torch.nn as nn
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
 )
-
 
 
 # Simulated Time Series with Anomalies
@@ -52,17 +51,18 @@ anomalies = np.where(scores > threshold)[0]
 # Plot Results
 plt.figure(figsize=(12, 6))
 plt.plot(anomaly_data, label="Time Series")
-plt.scatter(anomalies, anomaly_data[anomalies], color='red', label="Anomalies", zorder=5)
+plt.scatter(
+    anomalies, anomaly_data[anomalies], color="red", label="Anomalies", zorder=5
+)
 plt.title("Anomaly Detection with Isolation Forest")
 plt.xlabel("Time")
 plt.ylabel("Value")
 plt.legend()
-plt.savefig('anomaly_detection_isolation_forest.png')
+plt.savefig("anomaly_detection_isolation_forest.png")
 plt.show()
 
 logger.info(f"Number of anomalies detected: {len(anomalies)}")
 logger.info(f"Anomaly indices: {anomalies}")
-
 
 
 def generate_data(n_points=1000, anomaly_start=700, anomaly_end=710):
@@ -71,52 +71,72 @@ def generate_data(n_points=1000, anomaly_start=700, anomaly_end=710):
     data[anomaly_start:anomaly_end] += 3  # Inject anomalies
     return data
 
+
 def prepare_data(data, window_size=20):
     scaler = MinMaxScaler()
     data_scaled = scaler.fit_transform(data.reshape(-1, 1))
-    X = np.array([data_scaled[i:i+window_size] for i in range(len(data_scaled) - window_size)])
+    X = np.array(
+        [
+            data_scaled[i : i + window_size]
+            for i in range(len(data_scaled) - window_size)
+        ]
+    )
     return X, scaler
 
+
 def create_model(window_size):
-    model = Sequential([
-        LSTM(32, activation='relu', input_shape=(window_size, 1), return_sequences=True),
-        LSTM(16, activation='relu', return_sequences=False),
-        RepeatVector(window_size),
-        LSTM(16, activation='relu', return_sequences=True),
-        LSTM(32, activation='relu', return_sequences=True),
-        TimeDistributed(Dense(1))
-    ])
-    model.compile(optimizer='adam', loss='mse')
+    model = Sequential(
+        [
+            LSTM(
+                32,
+                activation="relu",
+                input_shape=(window_size, 1),
+                return_sequences=True,
+            ),
+            LSTM(16, activation="relu", return_sequences=False),
+            RepeatVector(window_size),
+            LSTM(16, activation="relu", return_sequences=True),
+            LSTM(32, activation="relu", return_sequences=True),
+            TimeDistributed(Dense(1)),
+        ]
+    )
+    model.compile(optimizer="adam", loss="mse")
     return model
+
 
 def detect_anomalies(reconstruction_error, threshold=3):
     mean = np.mean(reconstruction_error)
     std = np.std(reconstruction_error)
     return reconstruction_error > mean + threshold * std
 
-def plot_results(data, reconstruction_error, threshold=3, window_size=20, plot: bool = False):
+
+def plot_results(
+    data, reconstruction_error, threshold=3, window_size=20, plot: bool = False
+):
     if plot:
         plt.figure(figsize=(12, 6))
-    
-    # Plot the original data
+
+        # Plot the original data
         plt.plot(data[window_size:], label="Time Series")
-    
-    # Detect anomalies
+
+        # Detect anomalies
         mean = np.mean(reconstruction_error)
         std = np.std(reconstruction_error)
         anomalies = reconstruction_error > mean + threshold * std
-    
-    # Plot anomalies
+
+        # Plot anomalies
         anomaly_indices = np.where(anomalies)[0] + window_size
-        plt.scatter(anomaly_indices, data[anomaly_indices], color='red', label="Anomalies")
-    
+        plt.scatter(
+            anomaly_indices, data[anomaly_indices], color="red", label="Anomalies"
+        )
+
         plt.title("Anomaly Detection with LSTM Autoencoder")
         plt.xlabel("Time")
         plt.ylabel("Value")
         plt.legend()
-        plt.savefig('lstm_anomaly_detection.jpg')
+        plt.savefig("lstm_anomaly_detection.jpg")
         plt.show()
-    
+
     return anomalies
 
 
@@ -130,8 +150,18 @@ if __name__ == "__main__":
 
     # Create and train model
     model = create_model(window_size=20)
-    early_stopping = EarlyStopping(monitor='val_loss', patience=5, restore_best_weights=True)
-    model.fit(X, X, epochs=50, batch_size=32, validation_split=0.2, callbacks=[early_stopping], verbose=1)
+    early_stopping = EarlyStopping(
+        monitor="val_loss", patience=5, restore_best_weights=True
+    )
+    model.fit(
+        X,
+        X,
+        epochs=50,
+        batch_size=32,
+        validation_split=0.2,
+        callbacks=[early_stopping],
+        verbose=1,
+    )
 
     # Predict and calculate reconstruction error
     X_pred = model.predict(X)
@@ -147,7 +177,7 @@ if __name__ == "__main__":
 
 
 torch.manual_seed(42)
-signalplot.apply(font_family='serif')
+signalplot.apply(font_family="serif")
 
 
 @dataclass
@@ -164,7 +194,7 @@ class Config:
 
 def load_series(cfg: Config) -> pd.Series:
     p = Path(cfg.csv_path)
-    df = read_csv(p, header=None, usecols=[0,1], names=["date","value"], sep=",")
+    df = read_csv(p, header=None, usecols=[0, 1], names=["date", "value"], sep=",")
     df["date"] = pd.to_datetime(df["date"], format="%Y-%m-%d", errors="coerce")
     df["value"] = pd.to_numeric(df["value"], errors="coerce")
     s = df.dropna().sort_values("date").set_index("date")["value"].asfreq(cfg.freq)
@@ -175,19 +205,25 @@ def stl_residuals(s: pd.Series, season: int) -> pd.Series:
     stl = STL(s, period=season, robust=True).fit()
     return stl.resid
 
+
 class AE(nn.Module):
     def __init__(self, input_dim: int):
         super().__init__()
         self.encoder = nn.Sequential(
-            nn.Linear(input_dim, 64), nn.ReLU(),
-            nn.Linear(64, 16), nn.ReLU(),
-            nn.Linear(16, 4)
+            nn.Linear(input_dim, 64),
+            nn.ReLU(),
+            nn.Linear(64, 16),
+            nn.ReLU(),
+            nn.Linear(16, 4),
         )
         self.decoder = nn.Sequential(
-            nn.Linear(4, 16), nn.ReLU(),
-            nn.Linear(16, 64), nn.ReLU(),
-            nn.Linear(64, input_dim)
+            nn.Linear(4, 16),
+            nn.ReLU(),
+            nn.Linear(16, 64),
+            nn.ReLU(),
+            nn.Linear(64, input_dim),
         )
+
     def forward(self, x):
         z = self.encoder(x)
         return self.decoder(z)
@@ -196,11 +232,11 @@ class AE(nn.Module):
 def make_windows(x: np.ndarray, win: int) -> np.ndarray:
     if len(x) < win:
         return np.empty((0, win))
-    return np.stack([x[i:i+win] for i in range(len(x)-win+1)], axis=0)
+    return np.stack([x[i : i + win] for i in range(len(x) - win + 1)], axis=0)
 
 
 def train_autoencoder(X: np.ndarray, cfg: Config) -> tuple[AE, np.ndarray]:
-    device = torch.device('cpu')
+    device = torch.device("cpu")
     model = AE(X.shape[1]).to(device)
     opt = torch.optim.Adam(model.parameters(), lr=cfg.lr)
     loss_fn = nn.MSELoss()
@@ -223,7 +259,7 @@ def train_autoencoder(X: np.ndarray, cfg: Config) -> tuple[AE, np.ndarray]:
     with torch.no_grad():
         Xten = torch.from_numpy(X).float().to(device)
         R = model(Xten).cpu().numpy()
-    errs = np.mean((R - X)**2, axis=1)
+    errs = np.mean((R - X) ** 2, axis=1)
     return model, errs
 
 
@@ -245,7 +281,7 @@ def main(plot: bool = False):
 
     # Train on the middle 80% windows to reduce edge effects (still leakage-safe for detection use case)
     n = X.shape[0]
-    lo, hi = int(0.1*n), int(0.9*n)
+    lo, hi = int(0.1 * n), int(0.9 * n)
     X_train = X[lo:hi]
 
     model, errs = train_autoencoder(X_train, cfg)
@@ -254,10 +290,10 @@ def main(plot: bool = False):
     with torch.no_grad():
         X_all = torch.from_numpy(X).float()
         R_all = model(X_all).cpu().numpy()
-        all_errs = np.mean((R_all - X)**2, axis=1)
+        all_errs = np.mean((R_all - X) ** 2, axis=1)
 
     # Map window error back to the end timestamp of each window
-    err_idx = resid.index[cfg.window-1:]
+    err_idx = resid.index[cfg.window - 1 :]
     err_s = pd.Series(all_errs, index=err_idx)
 
     # Z-score thresholding on reconstruction error
@@ -268,21 +304,28 @@ def main(plot: bool = False):
 
     # Plot on original series
     if plot:
-        plt.figure(figsize=(10,5))
-        plt.plot(s.index, s.values, label='EIA series', alpha=0.7)
+        plt.figure(figsize=(10, 5))
+        plt.plot(s.index, s.values, label="EIA series", alpha=0.7)
         if anomalies.any():
             ts_anom = err_s.index[anomalies]
             vals = s.reindex(ts_anom).values
-            plt.scatter(ts_anom, vals, color='red', s=24, label='AE anomaly')
+            plt.scatter(ts_anom, vals, color="red", s=24, label="AE anomaly")
         plt.legend()
-        signalplot.save('eia_anomaly_autoencoder.png')
+        signalplot.save("eia_anomaly_autoencoder.png")
 
-    # Also show error time series
-        plt.figure(figsize=(10,3))
-        plt.plot(err_s.index, err_s.values, label='Recon error')
-        plt.axhline(e_mu + cfg.z_thresh*e_sd, color='red', lw=0.8, linestyle='--', label='threshold')
+        # Also show error time series
+        plt.figure(figsize=(10, 3))
+        plt.plot(err_s.index, err_s.values, label="Recon error")
+        plt.axhline(
+            e_mu + cfg.z_thresh * e_sd,
+            color="red",
+            lw=0.8,
+            linestyle="--",
+            label="threshold",
+        )
         plt.legend()
-        signalplot.save('eia_anomaly_autoencoder_error.png')
+        signalplot.save("eia_anomaly_autoencoder_error.png")
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()

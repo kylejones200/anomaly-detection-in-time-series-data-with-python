@@ -8,24 +8,28 @@ IsolationForest is unchanged (sklearn); the statistical detector is the
 DuckDB showcase here.
 """
 
-import duckdb
-import polars as pl
-import matplotlib.pyplot as plt
 from pathlib import Path
+
+import duckdb
+import matplotlib.pyplot as plt
+import polars as pl
 
 
 def create_lagged_features(series: pl.Series, lag: int = 5) -> pl.DataFrame:
     """pandas .shift() loop → DuckDB LAG() window functions."""
     pl.DataFrame({"idx": range(len(series)), "value": series})
     lag_exprs = ",\n            ".join(
-        f"LAG(value, {i}) OVER (ORDER BY idx) AS lag_{i}"
-        for i in range(1, lag + 1)
+        f"LAG(value, {i}) OVER (ORDER BY idx) AS lag_{i}" for i in range(1, lag + 1)
     )
-    return duckdb.sql(f"""
+    return (
+        duckdb.sql(f"""
         SELECT value, {lag_exprs}
         FROM df
         ORDER BY idx
-    """).pl().drop_nulls()
+    """)
+        .pl()
+        .drop_nulls()
+    )
 
 
 def detect_anomalies_statistical(
@@ -64,17 +68,18 @@ def plot_anomalies(
 ):
     if not plot:
         return
-    indices  = result["idx"].to_list()
-    values   = result["value"].to_list()
-    is_anom  = result["is_anomaly"].to_list()
+    indices = result["idx"].to_list()
+    values = result["value"].to_list()
+    is_anom = result["is_anomaly"].to_list()
     anom_idx = [i for i, a in zip(indices, is_anom) if a == 1]
-    anom_val = [v for v, a in zip(values,  is_anom) if a == 1]
+    anom_val = [v for v, a in zip(values, is_anom) if a == 1]
 
     fig, ax = plt.subplots(figsize=(10, 6))
     ax.plot(indices, values, label="Time Series", color="#4A90A4", linewidth=1.2)
     if anom_idx:
-        ax.scatter(anom_idx, anom_val, color="#D4A574", s=50,
-                   label="Anomalies", zorder=5)
+        ax.scatter(
+            anom_idx, anom_val, color="#D4A574", s=50, label="Anomalies", zorder=5
+        )
     ax.set_xlabel("Time")
     ax.set_ylabel("Value")
     ax.set_title(title)
