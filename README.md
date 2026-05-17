@@ -47,3 +47,11 @@ Edit `config.yaml` to customize:
 - By default, generates synthetic time series with injected anomalies.
 - Isolation Forest requires feature engineering (lagged features).
 - Statistical method assumes normal distribution.
+
+## Disclaimer
+
+Educational/demo code only. Not financial, safety, or engineering advice. Use at your own risk. Verify results independently before any production or operational use.
+
+## License
+
+MIT — see [LICENSE](LICENSE).

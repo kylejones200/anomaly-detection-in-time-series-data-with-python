@@ -45,42 +45,44 @@ def plot_anomalies(
     plot: bool = False,
 ):
     """Plot time series with detected anomalies"""
-    if plot:
-        fig, ax = plt.subplots(figsize=(10, 6))
+    if not plot:
+        return
 
-        ax.plot(
-            data.index if hasattr(data.index, "__len__") else range(len(data)),
-            data.values,
-            label="Time Series",
-            color="#4A90A4",
-            linewidth=1.2,
-        )
+    fig, ax = plt.subplots(figsize=(10, 6))
 
-        anomaly_indices = np.where(anomalies == 1)[0]
-        if len(anomaly_indices) > 0:
-            if hasattr(data.index, "__getitem__"):
-                anomaly_values = data.iloc[anomaly_indices]
-                ax.scatter(
-                    anomaly_values.index,
-                    anomaly_values.values,
-                    color="#D4A574",
-                    s=50,
-                    label="Anomalies",
-                    zorder=5,
-                )
-            else:
-                ax.scatter(
-                    anomaly_indices,
-                    data.iloc[anomaly_indices].values,
-                    color="#D4A574",
-                    s=50,
-                    label="Anomalies",
-                    zorder=5,
-                )
+    ax.plot(
+        data.index if hasattr(data.index, "__len__") else range(len(data)),
+        data.values,
+        label="Time Series",
+        color="#4A90A4",
+        linewidth=1.2,
+    )
 
-        ax.set_xlabel("Time")
-        ax.set_ylabel("Value")
-        ax.legend(loc="best")
+    anomaly_indices = np.where(anomalies == 1)[0]
+    if len(anomaly_indices) > 0:
+        if hasattr(data.index, "__getitem__"):
+            anomaly_values = data.iloc[anomaly_indices]
+            ax.scatter(
+                anomaly_values.index,
+                anomaly_values.values,
+                color="#D4A574",
+                s=50,
+                label="Anomalies",
+                zorder=5,
+            )
+        else:
+            ax.scatter(
+                anomaly_indices,
+                data.iloc[anomaly_indices].values,
+                color="#D4A574",
+                s=50,
+                label="Anomalies",
+                zorder=5,
+            )
 
-        plt.savefig(output_path, dpi=100, bbox_inches="tight")
-        plt.close()
+    ax.set_xlabel("Time")
+    ax.set_ylabel("Value")
+    ax.legend(loc="best")
+
+    plt.savefig(output_path, dpi=100, bbox_inches="tight")
+    plt.close()
