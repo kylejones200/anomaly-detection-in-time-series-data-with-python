@@ -1,15 +1,11 @@
 """Core functions for anomaly detection in time series data."""
 
-import logging
 from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from sklearn.ensemble import IsolationForest
-
-# Configure logging
-logging.basicConfig(level=logging.INFO, format="%(message)s")
 
 
 def create_lagged_features(data: pd.Series, lag: int = 5) -> pd.DataFrame:
@@ -49,7 +45,6 @@ def plot_anomalies(
         return
 
     fig, ax = plt.subplots(figsize=(10, 6))
-
     ax.plot(
         data.index if hasattr(data.index, "__len__") else range(len(data)),
         data.values,
@@ -57,7 +52,6 @@ def plot_anomalies(
         color="#4A90A4",
         linewidth=1.2,
     )
-
     anomaly_indices = np.where(anomalies == 1)[0]
     if len(anomaly_indices) > 0:
         if hasattr(data.index, "__getitem__"):
@@ -83,6 +77,5 @@ def plot_anomalies(
     ax.set_xlabel("Time")
     ax.set_ylabel("Value")
     ax.legend(loc="best")
-
     plt.savefig(output_path, dpi=100, bbox_inches="tight")
     plt.close()

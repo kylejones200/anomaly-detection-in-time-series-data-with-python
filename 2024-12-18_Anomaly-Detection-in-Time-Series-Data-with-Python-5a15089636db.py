@@ -1,6 +1,5 @@
 # Description: Short example for Anomaly Detection in Time Series Data with Python.
 
-
 import logging
 from dataclasses import dataclass
 from pathlib import Path
@@ -25,7 +24,6 @@ logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
 )
-
 
 # Simulated Time Series with Anomalies
 normal_data = np.sin(np.linspace(0, 50, 500))  # Sine wave as normal data
@@ -115,21 +113,17 @@ def plot_results(
 ):
     if plot:
         plt.figure(figsize=(12, 6))
-
         # Plot the original data
         plt.plot(data[window_size:], label="Time Series")
-
         # Detect anomalies
         mean = np.mean(reconstruction_error)
         std = np.std(reconstruction_error)
         anomalies = reconstruction_error > mean + threshold * std
-
         # Plot anomalies
         anomaly_indices = np.where(anomalies)[0] + window_size
         plt.scatter(
             anomaly_indices, data[anomaly_indices], color="red", label="Anomalies"
         )
-
         plt.title("Anomaly Detection with LSTM Autoencoder")
         plt.xlabel("Time")
         plt.ylabel("Value")
@@ -144,10 +138,8 @@ def plot_results(
 if __name__ == "__main__":
     # Generate data
     data = generate_data()
-
     # Prepare data
     X, scaler = prepare_data(data)
-
     # Create and train model
     model = create_model(window_size=20)
     early_stopping = EarlyStopping(
@@ -162,19 +154,14 @@ if __name__ == "__main__":
         callbacks=[early_stopping],
         verbose=1,
     )
-
     # Predict and calculate reconstruction error
     X_pred = model.predict(X)
     reconstruction_error = np.mean(np.abs(X - X_pred), axis=(1, 2))
-
     # Detect anomalies
     anomalies = detect_anomalies(reconstruction_error)
-
     # Plot results
     plot_results(data, anomalies, window_size=20)
-
     logger.info(f"Number of anomalies detected: {np.sum(anomalies)}")
-
 
 torch.manual_seed(42)
 signalplot.apply(font_family="serif")
@@ -240,10 +227,8 @@ def train_autoencoder(X: np.ndarray, cfg: Config) -> tuple[AE, np.ndarray]:
     model = AE(X.shape[1]).to(device)
     opt = torch.optim.Adam(model.parameters(), lr=cfg.lr)
     loss_fn = nn.MSELoss()
-
     ds = TensorDataset(torch.from_numpy(X).float())
     dl = DataLoader(ds, batch_size=cfg.batch_size, shuffle=True)
-
     model.train()
     for _ in range(cfg.epochs):
         for (xb,) in dl:
@@ -267,14 +252,12 @@ def main(plot: bool = False):
     np.random.seed(42)
     cfg = Config()
     s = load_series(cfg)
-
     # Physics-informed: learn on STL residual windows (trend/season removed)
     resid = stl_residuals(s, cfg.season).dropna()
     # Standardize residuals for training stability
     mu, sd = resid.mean(), resid.std(ddof=1)
     sd = sd if sd else 1.0
     zres = (resid - mu) / sd
-
     X = make_windows(zres.values, cfg.window)
     if X.shape[0] == 0:
         raise SystemExit("Series too short for configured window size.")
@@ -283,9 +266,7 @@ def main(plot: bool = False):
     n = X.shape[0]
     lo, hi = int(0.1 * n), int(0.9 * n)
     X_train = X[lo:hi]
-
     model, errs = train_autoencoder(X_train, cfg)
-
     # Score all windows using the trained AE
     with torch.no_grad():
         X_all = torch.from_numpy(X).float()
@@ -295,13 +276,11 @@ def main(plot: bool = False):
     # Map window error back to the end timestamp of each window
     err_idx = resid.index[cfg.window - 1 :]
     err_s = pd.Series(all_errs, index=err_idx)
-
     # Z-score thresholding on reconstruction error
     e_mu, e_sd = err_s.mean(), err_s.std(ddof=1)
     e_sd = e_sd if e_sd else 1.0
     z = (err_s - e_mu) / e_sd
     anomalies = z > cfg.z_thresh
-
     # Plot on original series
     if plot:
         plt.figure(figsize=(10, 5))
@@ -312,7 +291,6 @@ def main(plot: bool = False):
             plt.scatter(ts_anom, vals, color="red", s=24, label="AE anomaly")
         plt.legend()
         signalplot.save("eia_anomaly_autoencoder.png")
-
         # Also show error time series
         plt.figure(figsize=(10, 3))
         plt.plot(err_s.index, err_s.values, label="Recon error")

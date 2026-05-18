@@ -38,7 +38,6 @@ def detect_anomalies_statistical(
 ) -> pl.DataFrame:
     """
     Z-score anomaly detection via DuckDB window aggregates.
-
     Original: (series - series.mean()) / series.std()  (two pandas passes)
     New:      single DuckDB query computes mean, std, z-score, and flag together.
     """
@@ -73,7 +72,6 @@ def plot_anomalies(
     is_anom = result["is_anomaly"].to_list()
     anom_idx = [i for i, a in zip(indices, is_anom) if a == 1]
     anom_val = [v for v, a in zip(values, is_anom) if a == 1]
-
     fig, ax = plt.subplots(figsize=(10, 6))
     ax.plot(indices, values, label="Time Series", color="#4A90A4", linewidth=1.2)
     if anom_idx:

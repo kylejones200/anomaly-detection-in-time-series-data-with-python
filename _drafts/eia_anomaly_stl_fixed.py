@@ -35,7 +35,6 @@ def main(plot: bool = False):
     resid = stl.resid
     z = (resid - resid.mean()) / (resid.std(ddof=1) if resid.std(ddof=1) else 1.0)
     anomalies = z.abs() > cfg.z_thresh
-
     if plot:
         plt.figure(figsize=(9, 5))
         plt.plot(s.index, s.values, label="series", alpha=0.7)

@@ -23,7 +23,7 @@ logging.basicConfig(
 )
 
 
-def load_config(config_path: Path = None) -> dict:
+def load_config(config_path: Path | None = None) -> dict:
     """Load configuration from YAML file."""
     if config_path is None:
         config_path = Path(__file__).parent / "config.yaml"
@@ -42,7 +42,6 @@ def main():
         "--output-dir", type=Path, default=None, help="Output directory"
     )
     args = parser.parse_args()
-
     config = load_config(args.config)
     output_dir = (
         Path(args.output_dir)
@@ -50,7 +49,6 @@ def main():
         else Path(config["output"]["figures_dir"])
     )
     output_dir.mkdir(exist_ok=True)
-
     if args.data_path and args.data_path.exists():
         df = pd.read_csv(args.data_path)
         data = df.iloc[:, 0]
@@ -72,7 +70,6 @@ def main():
     if config["model"]["method"] == "isolation_forest":
         features_df = create_lagged_features(data, config["model"]["lag"])
         X = features_df.values
-
         anomalies = detect_anomalies_isolation_forest(
             X, config["model"]["contamination"], config["data"]["seed"]
         )
@@ -89,14 +86,12 @@ def main():
     logging.info(
         f"\nDetected {n_anomalies} anomalies ({n_anomalies / len(data) * 100:.2f}%)"
     )
-
     plot_anomalies(
         data,
         anomalies_full,
         "Anomaly Detection in Time Series",
         output_dir / "anomaly_detection.png",
     )
-
     logging.info(f"\nAnalysis complete. Figures saved to {output_dir}")
 
 
