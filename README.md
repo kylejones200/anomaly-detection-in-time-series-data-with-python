@@ -2,6 +2,14 @@
 
 This project demonstrates anomaly detection techniques for time series data.
 
+## Business context
+
+Anomaly detection identifies unusual patterns or outliers that deviate significantly from the expected behavior in a time series. These appraochs are commonly used in predictive maintenance, fraud detection, financial monitoring, and system health diagnostics. But these techniques can be used any time we have time series as a sanity check (does the income data make sense?)
+
+<figcaption>Photo by <a class="markup--anchor markup--figure-anchor" rel="photo-creator noopener" target="_blank">Vivek Doshi</a> on <a class="markup--anchor markup--figure-anchor"
+
+This article focuses on two anomaly detection techniques Isolaiton Forest and Autoencoders (deep learning).
+
 ## Article
 
 Medium article: [Anomaly Detection in Time Series Data with Python](https://medium.com/gitconnected/anomaly-detection-in-time-series-data-with-python-5a15089636db)
