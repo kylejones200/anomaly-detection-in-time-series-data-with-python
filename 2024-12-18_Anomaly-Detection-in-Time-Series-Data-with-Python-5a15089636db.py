@@ -10,10 +10,6 @@ import pandas as pd
 import signalplot
 import torch
 import torch.nn as nn
-from data_io import read_csv
-from keras.callbacks import EarlyStopping
-from keras.layers import LSTM, Dense, RepeatVector, TimeDistributed
-from keras.models import Sequential
 from sklearn.ensemble import IsolationForest
 from sklearn.preprocessing import MinMaxScaler
 from statsmodels.tsa.seasonal import STL
@@ -25,42 +21,18 @@ logging.basicConfig(
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
 )
 
-# Simulated Time Series with Anomalies
-normal_data = np.sin(np.linspace(0, 50, 500))  # Sine wave as normal data
-anomaly_data = normal_data.copy()
-anomaly_data[450:460] += 3  # Inject anomalies
-
-# Reshape and Scale Data
-scaler = MinMaxScaler()
-scaled_data = scaler.fit_transform(anomaly_data.reshape(-1, 1))
-
-# Train Isolation Forest Model
-iso_forest = IsolationForest(n_estimators=100, contamination=0.05, random_state=42)
-iso_forest.fit(scaled_data)
-
-# Compute Anomaly Scores
-scores = iso_forest.decision_function(scaled_data)
-scores = -scores  # Invert scores so that higher values indicate more anomalous points
-
-# Identify Anomalies: Points with Low Decision Function Values
-threshold = np.percentile(scores, 95)  # Top 5% as anomalies
-anomalies = np.where(scores > threshold)[0]
-
-# Plot Results
-plt.figure(figsize=(12, 6))
-plt.plot(anomaly_data, label="Time Series")
-plt.scatter(
-    anomalies, anomaly_data[anomalies], color="red", label="Anomalies", zorder=5
-)
-plt.title("Anomaly Detection with Isolation Forest")
-plt.xlabel("Time")
-plt.ylabel("Value")
-plt.legend()
-plt.savefig("anomaly_detection_isolation_forest.png")
-plt.show()
-
-logger.info(f"Number of anomalies detected: {len(anomalies)}")
-logger.info(f"Anomaly indices: {anomalies}")
+def run_isolation_forest_demo() -> None:
+    """Quick isolation-forest anomaly demo on synthetic data."""
+    normal_data = np.sin(np.linspace(0, 50, 500))
+    anomaly_data = normal_data.copy()
+    anomaly_data[450:460] += 3
+    scaled_data = MinMaxScaler().fit_transform(anomaly_data.reshape(-1, 1))
+    iso_forest = IsolationForest(n_estimators=100, contamination=0.05, random_state=42)
+    iso_forest.fit(scaled_data)
+    scores = -iso_forest.decision_function(scaled_data)
+    threshold = np.percentile(scores, 95)
+    anomalies = np.where(scores > threshold)[0]
+    logger.info("Isolation forest anomalies detected: %s", len(anomalies))
 
 
 def generate_data(n_points=1000, anomaly_start=700, anomaly_end=710):
@@ -82,24 +54,43 @@ def prepare_data(data, window_size=20):
     return X, scaler
 
 
-def create_model(window_size):
-    model = Sequential(
-        [
-            LSTM(
-                32,
-                activation="relu",
-                input_shape=(window_size, 1),
-                return_sequences=True,
-            ),
-            LSTM(16, activation="relu", return_sequences=False),
-            RepeatVector(window_size),
-            LSTM(16, activation="relu", return_sequences=True),
-            LSTM(32, activation="relu", return_sequences=True),
-            TimeDistributed(Dense(1)),
-        ]
-    )
-    model.compile(optimizer="adam", loss="mse")
-    return model
+def create_model(window_size: int) -> nn.Module:
+    """PyTorch LSTM autoencoder for sequence reconstruction."""
+
+    class LSTMAutoencoder(nn.Module):
+        def __init__(self, win: int):
+            super().__init__()
+            self.win = win
+            self.encoder = nn.LSTM(1, 32, batch_first=True)
+            self.decoder = nn.LSTM(32, 32, batch_first=True)
+            self.out = nn.Linear(32, 1)
+
+        def forward(self, x: torch.Tensor) -> torch.Tensor:
+            _, (h, _) = self.encoder(x)
+            dec_in = h.permute(1, 0, 2).expand(-1, self.win, -1)
+            dec_out, _ = self.decoder(dec_in)
+            return self.out(dec_out)
+
+    return LSTMAutoencoder(window_size)
+
+
+def train_autoencoder_sequences(model: nn.Module, X: np.ndarray, epochs: int = 20) -> None:
+    X_t = torch.FloatTensor(X)
+    loader = DataLoader(TensorDataset(X_t, X_t), batch_size=32, shuffle=True)
+    opt = torch.optim.Adam(model.parameters(), lr=1e-3)
+    loss_fn = nn.MSELoss()
+    model.train()
+    for _ in range(epochs):
+        for xb, yb in loader:
+            opt.zero_grad()
+            loss_fn(model(xb), yb).backward()
+            opt.step()
+
+
+def predict_autoencoder(model: nn.Module, X: np.ndarray) -> np.ndarray:
+    model.eval()
+    with torch.no_grad():
+        return model(torch.FloatTensor(X)).numpy()
 
 
 def detect_anomalies(reconstruction_error, threshold=3):
@@ -134,35 +125,6 @@ def plot_results(
     return anomalies
 
 
-# Main execution
-if __name__ == "__main__":
-    # Generate data
-    data = generate_data()
-    # Prepare data
-    X, scaler = prepare_data(data)
-    # Create and train model
-    model = create_model(window_size=20)
-    early_stopping = EarlyStopping(
-        monitor="val_loss", patience=5, restore_best_weights=True
-    )
-    model.fit(
-        X,
-        X,
-        epochs=50,
-        batch_size=32,
-        validation_split=0.2,
-        callbacks=[early_stopping],
-        verbose=1,
-    )
-    # Predict and calculate reconstruction error
-    X_pred = model.predict(X)
-    reconstruction_error = np.mean(np.abs(X - X_pred), axis=(1, 2))
-    # Detect anomalies
-    anomalies = detect_anomalies(reconstruction_error)
-    # Plot results
-    plot_results(data, anomalies, window_size=20)
-    logger.info(f"Number of anomalies detected: {np.sum(anomalies)}")
-
 torch.manual_seed(42)
 signalplot.apply(font_family="serif")
 
@@ -174,14 +136,19 @@ class Config:
     season: int = 12
     window: int = 24
     batch_size: int = 32
-    epochs: int = 200
+    epochs: int = 10
     lr: float = 1e-3
     z_thresh: float = 3.0  # threshold on recon error z-score
 
 
 def load_series(cfg: Config) -> pd.Series:
     p = Path(cfg.csv_path)
-    df = read_csv(p, header=None, usecols=[0, 1], names=["date", "value"], sep=",")
+    if p.exists():
+        df = pd.read_csv(p, header=None, usecols=[0, 1], names=["date", "value"], sep=",")
+    else:
+        idx = pd.date_range("2000-01-01", periods=240, freq="MS")
+        values = 1000 + 50 * np.sin(np.arange(len(idx)) / 6) + np.random.normal(0, 10, len(idx))
+        df = pd.DataFrame({"date": idx, "value": values})
     df["date"] = pd.to_datetime(df["date"], format="%Y-%m-%d", errors="coerce")
     df["value"] = pd.to_numeric(df["value"], errors="coerce")
     s = df.dropna().sort_values("date").set_index("date")["value"].asfreq(cfg.freq)
@@ -306,4 +273,5 @@ def main(plot: bool = False):
 
 
 if __name__ == "__main__":
+    run_isolation_forest_demo()
     main()

@@ -1,0 +1,9 @@
+[package]
+name = "anomaly_detection_in_time_series_data_with_python_core"
+description = "Global z-score anomaly detection"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[lib]
+path = "src/lib.rs"
